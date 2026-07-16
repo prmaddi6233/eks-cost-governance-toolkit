@@ -1,0 +1,43 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-cost-labels
+  annotations:
+    policies.kyverno.io/title: Require Cost-Allocation Labels
+    policies.kyverno.io/category: Cost
+    policies.kyverno.io/description: >-
+      Namespaces and workloads must carry team, cost-center, and environment labels so
+      Kubernetes spend is attributable in showback and maps to AWS billing keys.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-labels-on-namespaces
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      validate:
+        message: "Namespaces require team, cost-center, and environment labels."
+        pattern:
+          metadata:
+            labels:
+              team: "?*"
+              cost-center: "?*"
+              environment: "?*"
+    - name: require-labels-on-workloads
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+      validate:
+        message: "Workloads require a team label for cost attribution."
+        pattern:
+          spec:
+            template:
+              metadata:
+                labels:
+                  team: "?*"

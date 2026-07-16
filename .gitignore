@@ -1,0 +1,11 @@
+# Helm
+*.tgz
+charts/
+# Rendered output
+rendered/
+# OS / editor
+.DS_Store
+*.swp
+# Secrets — never commit
+*.kubeconfig
+.env

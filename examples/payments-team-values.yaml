@@ -1,0 +1,24 @@
+# Example per-team values for the cost-guardrails chart.
+#   helm template payments ./helm/cost-guardrails -f examples/payments-team-values.yaml
+team: payments
+costCenter: cc-1001
+environment: prod
+
+quota:
+  requestsCpu: "8"
+  requestsMemory: 16Gi
+  limitsCpu: "16"
+  limitsMemory: 32Gi
+  pods: "80"
+  persistentVolumeClaims: "20"
+
+limitRange:
+  defaultRequestCpu: 100m
+  defaultRequestMemory: 128Mi
+  defaultLimitCpu: "1"
+  defaultLimitMemory: 1Gi
+  maxCpu: "4"
+  maxMemory: 8Gi
+
+networkPolicy:
+  defaultDenyIngress: true

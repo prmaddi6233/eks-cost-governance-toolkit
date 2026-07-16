@@ -1,0 +1,29 @@
+# Identity and cost attribution for the namespace.
+team: payments
+costCenter: cc-1001
+environment: nonprod
+
+# Optional explicit namespace name; defaults to the team name.
+namespaceName: ""
+
+# Aggregate budget for the namespace (ResourceQuota).
+quota:
+  requestsCpu: "4"
+  requestsMemory: 8Gi
+  limitsCpu: "8"
+  limitsMemory: 16Gi
+  pods: "50"
+  persistentVolumeClaims: "10"
+
+# Per-container defaults and ceiling (LimitRange).
+limitRange:
+  defaultRequestCpu: 100m
+  defaultRequestMemory: 128Mi
+  defaultLimitCpu: 500m
+  defaultLimitMemory: 512Mi
+  maxCpu: "2"
+  maxMemory: 4Gi
+
+# Apply a default-deny ingress NetworkPolicy.
+networkPolicy:
+  defaultDenyIngress: true

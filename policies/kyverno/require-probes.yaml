@@ -1,0 +1,33 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes
+  annotations:
+    policies.kyverno.io/title: Require Readiness and Liveness Probes
+    policies.kyverno.io/category: Reliability
+    policies.kyverno.io/description: >-
+      Containers must define readiness and liveness probes so the scheduler and load balancers
+      route only to healthy pods — protecting both reliability and wasted-capacity cost.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: validate-probes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Readiness and liveness probes are required on every container."
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.readinessProbe || '' }}"
+                    operator: Equals
+                    value: ""
+                  - key: "{{ element.livenessProbe || '' }}"
+                    operator: Equals
+                    value: ""
