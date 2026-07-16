@@ -1,0 +1,32 @@
+# Helm values for the opencost/opencost chart, configured for EKS with CUR-based net pricing.
+#   helm install opencost opencost/opencost -n opencost -f values.yaml
+
+opencost:
+  exporter:
+    # Identifier for this cluster in allocation output.
+    defaultClusterId: eks-prod
+
+  prometheus:
+    # Use an existing Prometheus (in-cluster or Amazon Managed Prometheus).
+    internal:
+      enabled: false
+    external:
+      enabled: true
+      url: http://prometheus-server.monitoring.svc.cluster.local:80
+
+  # Enable the cloud-cost (CUR) pipeline for net, discount-aware pricing.
+  cloudCost:
+    enabled: true
+
+  # Name of the secret holding cloud-integration.json (created separately).
+  cloudIntegrationSecret: cloud-integration
+
+  ui:
+    enabled: true
+
+# IRSA: the service account assumes the CUR-read role.
+serviceAccount:
+  create: true
+  name: opencost
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/opencost-cur-access

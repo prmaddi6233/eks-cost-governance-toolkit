@@ -14,6 +14,7 @@ patterns so multi-tenant clusters stay both **safe** and **attributable**.
 |---|---|---|
 | **Governance** | Policy-as-code: resource requests/limits required, no `:latest`, probes required, cost labels required | [`policies/kyverno/`](policies/kyverno/) |
 | **Cost** | Per-namespace `ResourceQuota` + `LimitRange`, cost-allocation labels for showback | [`base/`](base/), [`helm/cost-guardrails/`](helm/cost-guardrails/) |
+| **Measurement** | OpenCost allocates real (CUR-based, net) spend by team/namespace | [`cost-tracking/`](cost-tracking/) |
 | **Guardrails** | A Helm chart that templatizes a governed, budgeted team namespace | [`helm/cost-guardrails/`](helm/cost-guardrails/) |
 
 ## How it fits together
@@ -35,15 +36,17 @@ flowchart TD
     KYV -->|require probes| POD
     KYV -->|require cost labels| POD
 
-    NS -.cost labels.-> SHOW[Showback<br/>OpenCost / Kubecost]
-    RQ -.bounded spend.-> SHOW
+    NS -.cost labels.-> OC[OpenCost<br/>net cost via CUR]
+    RQ -.bounded spend.-> OC
+    OC --> SHOW[Showback by team]
 ```
 
 - **Namespace guardrails** (Helm) give every team a budgeted, labelled home.
 - **Kyverno policies** (admission) stop the workloads that drive silent waste — unbounded pods,
   mutable `:latest` images, missing probes, unlabelled (un-attributable) resources.
-- **Cost labels** flow into an OpenCost/Kubecost-style showback so Kubernetes spend maps back to
-  the same `team` / `cost-center` keys used in the AWS billing analytics.
+- **OpenCost** (in [`cost-tracking/`](cost-tracking/)) reads those labels and allocates real,
+  CUR-based spend so Kubernetes cost maps back to the same `team` / `cost-center` keys used in
+  the AWS billing analytics.
 
 ## Repository layout
 
@@ -52,7 +55,8 @@ flowchart TD
 | `policies/kyverno/` | Kyverno `ClusterPolicy` guardrails (governance) |
 | `base/` | A plain-manifest governed team namespace (quota + limits + default-deny network) |
 | `helm/cost-guardrails/` | Helm chart that renders a governed team namespace from values |
-| `docs/` | Namespace model, policy catalog, rightsizing &amp; cost notes |
+| `cost-tracking/` | OpenCost integration (CUR-based net pricing) + `/allocation` query scripts |
+| `docs/` | Namespace model, policy catalog, rightsizing, cost tracking |
 | `examples/` | Sample per-team Helm values |
 
 ## Quickstart
@@ -67,6 +71,13 @@ Apply the Kyverno guardrails (requires Kyverno installed in the cluster):
 
 ```sh
 kubectl apply -f policies/kyverno/
+```
+
+Track real spend with OpenCost (CUR-based net pricing) — see
+[`docs/cost-tracking.md`](docs/cost-tracking.md):
+
+```sh
+helm install opencost opencost/opencost -n opencost -f cost-tracking/opencost/values.yaml
 ```
 
 ## Why this matters

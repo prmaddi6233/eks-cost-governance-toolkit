@@ -1,0 +1,13 @@
+{
+  "aws": [
+    {
+      "athenaBucketName": "s3://REPLACE-athena-query-results/",
+      "athenaRegion": "us-east-1",
+      "athenaDatabase": "finops",
+      "athenaTable": "cost_and_usage_report",
+      "athenaWorkgroup": "primary",
+      "projectID": "111111111111",
+      "masterPayerARN": "arn:aws:iam::111111111111:role/opencost-cur-access"
+    }
+  ]
+}

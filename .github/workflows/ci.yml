@@ -43,9 +43,10 @@ jobs:
         run: |
           curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-      - name: Validate base manifests and policies
+      - name: Validate manifests and policies
         run: |
-          kubeconform -strict -summary -ignore-missing-schemas base/ policies/
+          kubeconform -strict -summary -ignore-missing-schemas \
+            base/ policies/ cost-tracking/opencost/manifests/
 
       - name: Lint Helm chart
         run: helm lint helm/cost-guardrails
@@ -55,3 +56,12 @@ jobs:
           helm template payments helm/cost-guardrails \
             -f examples/payments-team-values.yaml \
             | kubeconform -strict -summary -ignore-missing-schemas -
+
+      - name: Validate JSON and shell scripts
+        run: |
+          for f in $(find . -name '*.json' -not -path './.git/*'); do
+            echo "json: $f"; python3 -c "import json,sys; json.load(open('$f'))"
+          done
+          for s in $(find . -name '*.sh' -not -path './.git/*'); do
+            echo "bash -n: $s"; bash -n "$s"
+          done
