@@ -1,5 +1,7 @@
 # EKS Cost &amp; Governance Toolkit
 
+[![CI](https://github.com/prmaddi6233/eks-cost-governance-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/prmaddi6233/eks-cost-governance-toolkit/actions/workflows/ci.yml)
+
 A sanitized, opinionated starter for running **cost-aware, well-governed workloads on Amazon
 EKS**. It combines policy-as-code guardrails, per-team namespace budgets, and rightsizing
 patterns so multi-tenant clusters stay both **safe** and **attributable**.
