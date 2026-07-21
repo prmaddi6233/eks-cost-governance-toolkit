@@ -1,0 +1,52 @@
+---
+name: Bug Report
+description: Report something that isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please fill out the sections below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect instead?
+      placeholder: "When I run X, I get Y — but expected Z."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to trigger the issue
+      placeholder: |
+        1. Clone the repo
+        2. Run `terraform init`
+        3. Run `terraform validate`
+        4. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Relevant versions and context
+      placeholder: |
+        - Terraform: 1.9.x
+        - AWS provider: 5.x
+        - OS: macOS 15 / Ubuntu 24.04
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Paste error output or logs (redact sensitive data)
+      render: shell
+    validations:
+      required: false

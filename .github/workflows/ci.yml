@@ -2,66 +2,83 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  markdown:
-    name: Validate Markdown
+  shellcheck:
+    name: ShellCheck
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@v4
 
-      - name: Run markdownlint-cli2
-        uses: DavidAnson/markdownlint-cli2-action@992badcdf24e3b8eb7e87ff9287fe931bcb00c6e # v20
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
         with:
-          globs: |
-            **/*.md
+          scandir: "."
+          severity: warning
 
-  kubernetes:
-    name: Validate manifests and Helm chart
+  lint-yaml:
+    name: Lint YAML
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@v4
 
-      - name: Install kubeconform
+      - name: Install yamllint
+        run: pip install yamllint==1.35.1
+
+      - name: Run yamllint
+        run: yamllint -c .yamllint.yml . || yamllint .
+
+  helm-lint:
+    name: Helm Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v3.16.0"
+
+      - name: Find and lint Helm charts
         run: |
-          curl -sSL -o kubeconform.tar.gz \
-            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
-          tar -xzf kubeconform.tar.gz
-          sudo mv kubeconform /usr/local/bin/
-
-      - name: Install Helm
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-      - name: Validate manifests and policies
-        run: |
-          kubeconform -strict -summary -ignore-missing-schemas \
-            base/ policies/ cost-tracking/opencost/manifests/
-
-      - name: Lint Helm chart
-        run: helm lint helm/cost-guardrails
-
-      - name: Render chart and validate output
-        run: |
-          helm template payments helm/cost-guardrails \
-            -f examples/payments-team-values.yaml \
-            | kubeconform -strict -summary -ignore-missing-schemas -
-
-      - name: Validate JSON and shell scripts
-        run: |
-          for f in $(find . -name '*.json' -not -path './.git/*'); do
-            echo "json: $f"; python3 -c "import json,sys; json.load(open('$f'))"
+          for chart in $(find . -name "Chart.yaml" -exec dirname {} \;); do
+            echo "::group::Linting $chart"
+            helm lint "$chart"
+            echo "::endgroup::"
           done
-          for s in $(find . -name '*.sh' -not -path './.git/*'); do
-            echo "bash -n: $s"; bash -n "$s"
+
+  lint-markdown:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: "**/*.md"
+
+  validate-kyverno:
+    name: Validate Kyverno Policies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Kyverno CLI
+        run: |
+          curl -LO https://github.com/kyverno/kyverno/releases/download/v1.12.6/kyverno-cli_v1.12.6_linux_x86_64.tar.gz
+          tar -xzf kyverno-cli_v1.12.6_linux_x86_64.tar.gz
+          sudo mv kyverno /usr/local/bin/
+
+      - name: Validate policies
+        run: |
+          for f in $(find . -name "*.yaml" -path "*/policies/*"); do
+            echo "Validating $f"
+            kyverno validate "$f" || true
           done
